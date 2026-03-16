@@ -2,7 +2,6 @@
 
 #C# All $(app_list) $(tb mysql sudo/db/list)
 #C# All db app
-#C--# --nonosav
 tb_getopt app=All type=All - $@
 
 date=$(date +'%y-%m-%d-%HH%M')
@@ -14,8 +13,8 @@ backs_sytem=7
 
 [ -e /etc/tb/backup ] && . /etc/tb/backup
 
+# Convention: le dossier nosav est toujours exclu des backups
 nosav="--exclude=./nosav"
-[ "$nonosav" = "on" ] && nosav=""
 
 if [ "$app" = All ]; then
 	for i in $(find $d_sav1/auto -maxdepth 1 -mindepth 1 -type d | sort | tac | sed $backs_auto',$!d'); do
@@ -29,13 +28,20 @@ if [ "$app" = All ]; then
 	date
 	echo "############## SYSTEM ############## "
 
-	for i in etc root; do
-		dir=$d_sav1/system/$date
-		echo "############## $dir/$i ##############"
-		mkdir -p $dir
+	dir=$d_sav1/system/$date
+	mkdir -p $dir
 
-		tar cjf $dir/$i.tar.bz2 --exclude=./.vscode-server --exclude=./.windsurf-server --exclude=./.codeium --exclude=./.local --exclude=./.npm --exclude='./.*-server' --exclude='./.*-server/*' -C /$i . | true
+	# Backup /etc
+	echo "############## $dir/etc ##############"
+	tar cjf $dir/etc.tar.bz2 -C /etc . | true
+
+	# Backup /root : seulement les fichiers essentiels qui existent
+	echo "############## $dir/root ##############"
+	root_files=""
+	for f in .ssh .bash_history .bashrc .bash_profile .profile .my.cnf .vimrc .gitconfig sav; do
+		[ -e /root/$f ] && root_files="$root_files $f"
 	done
+	[ -n "$root_files" ] && tar cjf $dir/root.tar.bz2 -C /root $root_files | true
 	echo
 
 	date

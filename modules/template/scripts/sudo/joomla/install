@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Utiliser mariadb si disponible, sinon mysql
+if command -v mariadb >/dev/null 2>&1; then
+  MYSQL_CMD=mariadb
+else
+  MYSQL_CMD=mysql
+fi
+
 tb_getopt app - $@
 
 template=joomla
@@ -23,5 +30,5 @@ d_config=$TB_MODULE_DIR/templates/joomla
 
 cp -v $d_config/configuration.php $d_app/app/webroot
 
-cat $d_config/joom.sql | mysql $app
+cat $d_config/joom.sql | $MYSQL_CMD $app
 

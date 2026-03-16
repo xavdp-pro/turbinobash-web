@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Utiliser mariadb si disponible, sinon mysql
+if command -v mariadb >/dev/null 2>&1; then
+  MYSQL_CMD=mariadb
+else
+  MYSQL_CMD=mysql
+fi
+
 #C# $(app_list)
 
 tb_getopt src dst - $@
@@ -22,9 +29,8 @@ cp -rf $d_src/app $d_dst
 echo "### tb app sudo/bulldozer $dst ###"
 tb app sudo/bulldozer $dst
 
-echo "### tb mysql sudo/db/dump --triggers  --routines  $src | sed "s% $src% $dst%g" | mysql --init-command=\"SET SESSION FOREIGN_KEY_CHECKS=0\" $dst ###"
+echo "### tb mysql sudo/db/dump --triggers  --routines  $src | sed \"s% $src% $dst%g\" | $MYSQL_CMD --init-command=\"SET SESSION FOREIGN_KEY_CHECKS=0\" $dst ###"
 
-tb mysql sudo/db/dump --triggers --routines $src | sed "s%$src%$dst%g" | mysql --init-command="SET SESSION FOREIGN_KEY_CHECKS=0
-" $dst
+tb mysql sudo/db/dump --triggers --routines $src | sed "s%$src%$dst%g" | $MYSQL_CMD --init-command="SET SESSION FOREIGN_KEY_CHECKS=0" $dst
 
 return 0

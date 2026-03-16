@@ -1,5 +1,11 @@
 #!/bin/bash
-#!/bin/bash
+
+# Utiliser mariadb si disponible, sinon mysql (compatibilité vieux systèmes)
+if command -v mariadb >/dev/null 2>&1; then
+  MYSQL_CMD=mariadb
+else
+  MYSQL_CMD=mysql
+fi
 
 function mysql_query {
 	local db_user db_passwd file d_home db_host_to db_port the_port
@@ -29,9 +35,9 @@ function mysql_query {
 
 	if [ -e $f_cnf ]; then
 		if [ -n "$SQL" ]; then
-			echo "$SQL" | mysql -B -u$db_user -h$db_host_to -s $the_port $@
+			echo "$SQL" | $MYSQL_CMD -B -u$db_user -h$db_host_to -s $the_port $@
 		else
-			mysql -B -u$db_user -h$db_host_to -s $the_port $@ <&0
+			$MYSQL_CMD -B -u$db_user -h$db_host_to -s $the_port $@ <&0
 		fi
 	else
 		echoc -y1 "$f_passwd unexistant !"
