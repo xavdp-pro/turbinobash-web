@@ -238,8 +238,18 @@ composer self-update 1.9.1
 
 #### Install last MARIADB version
 ```bash
-tb app sudo/install/mariadb --last
+tb app sudo/install/mariadb
 ```
+
+By default, MariaDB 11.4 LTS is installed from official repositories. Use `--system` to install from system repositories instead.
+
+#### MySQL/MariaDB CLI compatibility
+
+The scripts automatically detect and use the correct CLI command:
+- **New systems (Debian 12+)**: uses `mariadb` command (no deprecation warnings)
+- **Old systems**: uses `mysql` command
+
+No configuration needed - it just works on both old and new systems.
 
 
 
@@ -301,6 +311,25 @@ root@test0:/var/sav1/test0# tree -sh
         |-- [497K]  etc.tar.bz2
         `-- [6.5K]  root.tar.bz2
 ```
+
+##### Convention: nosav directory
+
+The `nosav` directory is **always excluded** from backups. Use it to store files you don't want to backup (large files, caches, temporary data, etc.).
+
+```bash
+# Example: exclude large uploads from backup
+mkdir /apps/myapp-v1/app/webroot/uploads/nosav
+mv /apps/myapp-v1/app/webroot/uploads/large-files/* /apps/myapp-v1/app/webroot/uploads/nosav/
+```
+
+##### /root backup: only essential files
+
+The `/root` backup only includes essential files (not heavy caches like `.npm`, `.cache`, `.ollama`, etc.):
+- `.ssh/` - SSH keys
+- `.bash_history`, `.bashrc`, `.bash_profile`, `.profile` - Bash config
+- `.my.cnf` - MySQL/MariaDB config
+- `.vimrc`, `.gitconfig` - Editor/Git config
+- `sav/` - Personal backup directory (if exists)
 
 #### Crontab to update SSL certificates
 nginx version
