@@ -24,7 +24,7 @@ if ! getent passwd $app &>/dev/null; then
 fi
 
 # directories creation
-mkdir -pv $d_app/{app/webroot,etc/php,log,sav,tmp}
+mkdir -pv $d_app/{app/webroot,etc/php,log,sav,tmp,nosav}
 
 # remember chosen php version
 echo $php >$d_app/etc/php/version
