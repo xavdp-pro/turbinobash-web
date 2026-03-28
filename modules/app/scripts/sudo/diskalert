@@ -1,5 +1,11 @@
 #/bin/bash
 
+#C# --threshold=85
+
+
+# Alertes à 90% tous les jours à 3h30
+# 30 3 * * * /bin/tb app sudo/diskalert email@domain.tld --threshold=90
+
 if whereis mailx | grep bin >/dev/null; then
   :
 else
@@ -18,13 +24,34 @@ else
   exit
 fi
 
-tb_getopt email - $@
+tb_getopt email threshold=85 - $@
 
 md5File=${0//\.*/}.md5
 
-# test if all partiion space disk is over 85 %
+# test if all partition space disk is over threshold %
 # exclude /dev/loop (snap) devices which are always at 100%
-DF=$(df -h -P | column -t | grep "8[5-9]%\|9[0-9]%\|100%" | grep -v "^/dev/loop")
+if [ "$threshold" -eq 85 ]; then
+  pattern="8[5-9]%\|9[0-9]%\|100%"
+elif [ "$threshold" -eq 90 ]; then
+  pattern="9[0-9]%\|100%"
+elif [ "$threshold" -eq 95 ]; then
+  pattern="9[5-9]%\|100%"
+elif [ "$threshold" -eq 80 ]; then
+  pattern="8[0-9]%\|9[0-9]%\|100%"
+else
+  # For custom thresholds, generate the pattern dynamically
+  if [ "$threshold" -ge 85 ] && [ "$threshold" -lt 90 ]; then
+    pattern="8[$threshold]%,8[$((threshold+1))-9]%\|9[0-9]%\|100%"
+  elif [ "$threshold" -ge 90 ] && [ "$threshold" -lt 95 ]; then
+    pattern="9[$((threshold-90))-9]%\|100%"
+  elif [ "$threshold" -ge 95 ]; then
+    pattern="9[$((threshold-90))-9]%\|100%"
+  else
+    pattern="$threshold%\|100%"
+  fi
+fi
+
+DF=$(df -h -P | column -t | grep "$pattern" | grep -v "^/dev/loop")
 
 if [[ -n "$DF" ]]; then
   md5=$(echo "$DF" | md5sum | sed "s% *-%%")
