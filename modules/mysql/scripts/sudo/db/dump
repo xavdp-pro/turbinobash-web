@@ -4,6 +4,18 @@
 #C# $(mysql_table_list ${A_PARAMS[CINDEX-1]})
 #C--# --prefix=_test_
 
+# Exécuter mysqldump en filtrant uniquement le warning de dépréciation
+function mysqldump_exec() {
+  local stderr_file=$(mktemp)
+  "$@" 2>"$stderr_file"
+  local exit_code=$?
+  if [ -s "$stderr_file" ]; then
+    grep -v "mysql: Deprecated program name" "$stderr_file" >&2
+  fi
+  rm -f "$stderr_file"
+  return $exit_code
+}
+
 tb_getopt db_name table= - $@
 
 # Use mariadb-dump if available, fallback to mysqldump for compatibility
@@ -17,7 +29,7 @@ if [ -e ~/.my.cnf ]; then
   echo "SET FOREIGN_KEY_CHECKS=0;"
   echo "SET UNIQUE_CHECKS=0;"
   echo ""
-  $MYSQLDUMP_CMD -u$(id -u -n) --skip-lock-tables $@ | sed -e '/^\/\*!/d' -e '/^--/d' -e 's%EXISTS `%EXISTS `'$prefix'%g' -e 's%TABLE `%TABLE `'$prefix'%g'
+  mysqldump_exec $MYSQLDUMP_CMD -u$(id -u -n) --skip-lock-tables $@ | sed -e '/^\/\*!/d' -e '/^--/d' -e 's%EXISTS `%EXISTS `'$prefix'%g' -e 's%TABLE `%TABLE `'$prefix'%g'
   echo ""
   echo "SET FOREIGN_KEY_CHECKS=1;"
   echo "SET UNIQUE_CHECKS=1;"
@@ -25,7 +37,7 @@ elif [ -e ~/etc/mysql/localhost/passwd ]; then
   echo "SET FOREIGN_KEY_CHECKS=0;"
   echo "SET UNIQUE_CHECKS=0;"
   echo ""
-  $MYSQLDUMP_CMD -u$(id -u -n) -p$(cat ~/etc/mysql/localhost/passwd) --skip-lock-tables $@ | sed -e '/^\/\*!/d' -e '/^--/d' -e 's%EXISTS `%EXISTS `'$prefix'%g' -e 's%TABLE `%TABLE `'$prefix'%g'
+  mysqldump_exec $MYSQLDUMP_CMD -u$(id -u -n) -p$(cat ~/etc/mysql/localhost/passwd) --skip-lock-tables $@ | sed -e '/^\/\*!/d' -e '/^--/d' -e 's%EXISTS `%EXISTS `'$prefix'%g' -e 's%TABLE `%TABLE `'$prefix'%g'
   echo ""
   echo "SET FOREIGN_KEY_CHECKS=1;"
   echo "SET UNIQUE_CHECKS=1;"

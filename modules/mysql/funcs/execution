@@ -107,9 +107,9 @@ password=$db_passwd
 
 	mysql_chroot_start --skip-grant-tables
 
-	echo "UPDATE mysql.global_priv SET priv=json_set(priv,'$.plugin', 'mysql_native_password', '$.authentication_string', PASSWORD('$db_passwd')) WHERE User='root';" | $MYSQL_CMD -uroot mysql
-	echo "DELETE FROM mysql.global_priv WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" | $MYSQL_CMD -uroot mysql
-	echo "DELETE FROM mysql.global_priv WHERE User='';" | $MYSQL_CMD -uroot mysql
+	echo "UPDATE mysql.global_priv SET priv=json_set(priv,'$.plugin', 'mysql_native_password', '$.authentication_string', PASSWORD('$db_passwd')) WHERE User='root';" | mysql_exec $MYSQL_CMD -uroot mysql
+	echo "DELETE FROM mysql.global_priv WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" | mysql_exec $MYSQL_CMD -uroot mysql
+	echo "DELETE FROM mysql.global_priv WHERE User='';" | mysql_exec $MYSQL_CMD -uroot mysql
 
 	mysql_chroot_stop
 	# service mariadb restart
@@ -138,7 +138,7 @@ function mysql_chroot_start {
 function mysql_chroot_stop {
 	systemctl set-environment MYSQLD_OPTS=""
 
-	echo "FLUSH PRIVILEGES" | $MYSQL_CMD | true
+	echo "FLUSH PRIVILEGES" | mysql_exec $MYSQL_CMD | true
 
 	service mariadb stop
 

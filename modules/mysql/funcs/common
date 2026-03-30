@@ -7,6 +7,26 @@ else
   MYSQL_CMD=mysql
 fi
 
+# Exécuter mysql/mariadb en filtrant uniquement le warning de dépréciation
+function mysql_exec() {
+  # Créer un fichier temporaire pour stderr
+  local stderr_file=$(mktemp)
+  
+  # Exécuter la commande en capturant stderr séparément
+  "$@" 2>"$stderr_file"
+  local exit_code=$?
+  
+  # Filtrer et afficher stderr en excluant le warning de dépréciation
+  if [ -s "$stderr_file" ]; then
+    grep -v "mysql: Deprecated program name" "$stderr_file" >&2
+  fi
+  
+  # Nettoyer
+  rm -f "$stderr_file"
+  
+  return $exit_code
+}
+
 function mysql_query {
 	local db_user db_passwd file d_home db_host_to db_port the_port
 
@@ -35,9 +55,9 @@ function mysql_query {
 
 	if [ -e $f_cnf ]; then
 		if [ -n "$SQL" ]; then
-			echo "$SQL" | $MYSQL_CMD -B -u$db_user -h$db_host_to -s $the_port $@
+			echo "$SQL" | mysql_exec $MYSQL_CMD -B -u$db_user -h$db_host_to -s $the_port $@
 		else
-			$MYSQL_CMD -B -u$db_user -h$db_host_to -s $the_port $@ <&0
+			mysql_exec $MYSQL_CMD -B -u$db_user -h$db_host_to -s $the_port $@ <&0
 		fi
 	else
 		echoc -y1 "$f_passwd unexistant !"
