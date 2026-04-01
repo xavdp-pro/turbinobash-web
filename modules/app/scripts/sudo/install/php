@@ -4,7 +4,24 @@
 
 tb_getopt php - $@
 
-apt install ca-certificates lsb-release apt-transport-https gnupg2 libmemcached11 -y
+# Installation des paquets de base avec détection libmemcached pour Debian 13 (trixie)
+apt-get update -qq
+
+# Détection du paquet libmemcached compatible (Debian 12: libmemcached11, Debian 13: libmemcached11t64)
+libmemcached_pkg=""
+for pkg in libmemcached11 libmemcached11t64; do
+  if apt-cache show "$pkg" >/dev/null 2>&1; then
+    libmemcached_pkg="$pkg"
+    break
+  fi
+done
+
+if [ -z "$libmemcached_pkg" ]; then
+  echo "Erreur: Aucun paquet libmemcached trouvé (libmemcached11 ou libmemcached11t64)" >&2
+  exit 1
+fi
+
+apt install ca-certificates lsb-release apt-transport-https gnupg2 "$libmemcached_pkg" -y
 
 if lsb_release -i | grep Debian; then
 	wget -q https://packages.sury.org/php/apt.gpg -O- | apt-key add -
