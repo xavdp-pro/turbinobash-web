@@ -41,6 +41,22 @@ git clone https://github.com/xavierdp/turbinobash-web.git
 cd turbinobash-web/scripts
 ```
 
+On a **Proxmox VE / PBS** host without an enterprise subscription, if `apt update` returns `401` on `enterprise.proxmox.com`, run as root **before** `nginx.sh` / `apache.sh` / … :
+
+```bash
+bash fix-proxmox-apt.sh
+apt update
+```
+
+The script comments out active `enterprise.proxmox.com` lines and adds `pve-no-subscription` and/or `pbs-no-subscription` on `download.proxmox.com` only when a matching enterprise repo was enabled (so a plain Debian CT is left unchanged).
+
+To **start the Proxmox VE web UI (port 8006)** when PVE is already installed (`pveproxy` present), run as root on the node:
+
+```bash
+bash pve-webui-8006.sh
+```
+
+If the script exits with “pveproxy is not installed”, this machine does not have Proxmox VE (e.g. PBS-only host uses **8007** only). Full PVE install: [Install Proxmox VE on Debian](https://pve.proxmox.com/wiki/Install_Proxmox_VE_on_Debian).
 
 ```bash
 # johndoe@domain.tld is the email to use with letsencrypt

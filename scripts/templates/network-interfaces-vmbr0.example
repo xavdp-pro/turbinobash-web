@@ -1,0 +1,17 @@
+# Example: move node IP from eth0 to bridge vmbr0 (Proxmox VE / Debian ifupdown).
+# Copy to the server as /etc/network/interfaces only after backup; adjust iface name (eth0 vs enpXsY).
+# Apply: ifreload -a   (ifupdown2) or reboot from console if unsure.
+
+auto lo
+iface lo inet loopback
+
+iface eth0 inet manual
+
+auto vmbr0
+iface vmbr0 inet static
+	address 45.155.171.136/24
+	gateway 45.155.171.1
+	bridge-ports eth0
+	bridge-stp off
+	bridge-fd 0
+#	dns-nameservers 1.1.1.1 8.8.8.8

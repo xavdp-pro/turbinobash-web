@@ -12,12 +12,29 @@ if [ "$system" != "on" ]; then
   curl -o /etc/apt/keyrings/mariadb-keyring.pgp 'https://mariadb.org/mariadb_release_signing_key.pgp'
 
   if [ "$ID" == "ubuntu" ]; then
+    MARIADB_SUITE=
+    for candidate in "$VERSION_CODENAME" noble jammy; do
+      if curl -fsSIL -o /dev/null "https://deb.mariadb.org/11.4/ubuntu/dists/${candidate}/Release" 2>/dev/null; then
+        MARIADB_SUITE=$candidate
+        break
+      fi
+    done
+    [ -z "$MARIADB_SUITE" ] && MARIADB_SUITE=jammy
     echo "
-deb [signed-by=/etc/apt/keyrings/mariadb-keyring.pgp] https://deb.mariadb.org/11.4/ubuntu $VERSION_CODENAME main
+deb [signed-by=/etc/apt/keyrings/mariadb-keyring.pgp] https://deb.mariadb.org/11.4/ubuntu $MARIADB_SUITE main
     " >/etc/apt/sources.list.d/mariadb.list
   else
+    # Upstream MariaDB often lags new Debian releases: trixie may be missing while bookworm exists.
+    MARIADB_SUITE=
+    for candidate in "$VERSION_CODENAME" bookworm bullseye; do
+      if curl -fsSIL -o /dev/null "https://deb.mariadb.org/11.4/debian/dists/${candidate}/Release" 2>/dev/null; then
+        MARIADB_SUITE=$candidate
+        break
+      fi
+    done
+    [ -z "$MARIADB_SUITE" ] && MARIADB_SUITE=bookworm
     echo "
-deb [signed-by=/etc/apt/keyrings/mariadb-keyring.pgp] https://deb.mariadb.org/11.4/debian $VERSION_CODENAME main
+deb [signed-by=/etc/apt/keyrings/mariadb-keyring.pgp] https://deb.mariadb.org/11.4/debian $MARIADB_SUITE main
     " >/etc/apt/sources.list.d/mariadb.list
   fi
 
