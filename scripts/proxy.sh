@@ -25,13 +25,13 @@ apt install -y bash-completion curl nano
 bash ../modules/module/wrappers/install
 
 tb app sudo/install/base
+tb app sudo/install/php 8.3
 tb app sudo/install/web --proxy
 tb app sudo/install/ssl $hostname --proxy
-tb app sudo/way/init nginx $email $hostname
+tb app sudo/way/init nginx $email $hostname 8.3
 tb app sudo/install/files
 service nginx restart
-service php7.4-fpm restart
-service php8.1-fpm restart
+service php8.3-fpm restart
 service mariadb restart
 
 echo "# tb app sudo/way/proxy/create test-v1 http://127.0.0.1/ --certbot"

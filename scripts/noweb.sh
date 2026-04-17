@@ -2,9 +2,9 @@
 export DEBIAN_FRONTEND=noninteractive
 
 if [ -z "$1" ]; then
-  php=7.4
+  php=8.3
 else
-  php=$2
+  php=$1
 fi
 
 
@@ -23,8 +23,7 @@ bash ../modules/module/wrappers/install
 
 tb app sudo/install/base
 tb app sudo/install/mariadb
-tb app sudo/install/php 7.4
-tb app sudo/install/php 8.1
+tb app sudo/install/php $php
 tb app sudo/install/web --noweb
 tb app sudo/install/files
 

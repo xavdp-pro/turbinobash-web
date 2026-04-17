@@ -10,7 +10,7 @@ email=$(cat /conf/email)
 
 [ -z "$webdomain" ] && webdomain=$(cat /conf/webdomain) || dom_from_cl=on
 
-[ -e /conf/php ] && php=$(cat /conf/php) || php=7.4
+[ -e /conf/php ] && php=$(cat /conf/php) || php=8.3
 
 tb_getopt app php=$php - $@
 

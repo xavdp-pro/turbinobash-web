@@ -3,6 +3,7 @@
 #C--# --noweb
 
 tb_getopt php - $@
+[ -z "$php" ] && php=8.3
 
 # libmemcached SONAME package: Debian 12 = libmemcached11; Debian 13+ t64 = libmemcached11t64.
 # Ubuntu may follow later; try candidates in order so one script works everywhere.
@@ -46,16 +47,16 @@ apt install ${install//X/$php} -y
 
 . $TB_MODULE_DIR/templates/fpm/www.conf
 
-mkdir -p /etc/php/${version}/fpm/pool.d
-mkdir -p /etc/php/${version}/fpm/conf.d
+mkdir -p /etc/php/${php}/fpm/pool.d
+mkdir -p /etc/php/${php}/fpm/conf.d
 
-f_fpm=/etc/php/${version}/fpm/pool.d/www.conf
+f_fpm=/etc/php/${php}/fpm/pool.d/www.conf
 echo "$conf_fpm" >$f_fpm
 
-service php${version}-fpm restart
+service php${php}-fpm restart
 cat $f_fpm
 
-cp $TB_MODULE_DIR/templates/php.ini /etc/php/${version}/cli
-cp $TB_MODULE_DIR/templates/php.ini /etc/php/${version}/fpm
+cp $TB_MODULE_DIR/templates/php.ini /etc/php/${php}/cli
+cp $TB_MODULE_DIR/templates/php.ini /etc/php/${php}/fpm
 
 return 0
