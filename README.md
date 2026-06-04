@@ -1,147 +1,149 @@
 # turbinobash-web
 
-**turbinobash-web** is a small commandline PLESK like
+**turbinobash-web** is a small command-line, Plesk-like hosting framework for Debian/Ubuntu.
 
-The purpose isn't a DOCKER like : Its a tool between raw server administration and automated appilcation space management
+It is not a container platform: it sits between raw server administration and per-application space management. Network policy (firewall, `iptables`, `ufw`, routing, etc.) is out of scope — use your usual sysadmin tooling.
 
-Compatible with Debian 12+ (including Trixie) and Ubuntu 24.04+
+Compatible with **Debian 12+** (including Trixie) and **Ubuntu 24.04+**.
 
-## turbinobash 
+## turbinobash framework
 
-**turbinobash** is a bash framewok i made to manage bash script and script completion
+**turbinobash** (`tb`) is a Bash framework: modular scripts, `sudo/` helpers, and shell completion.
 
-**turbinobash-web** is a combination of 4 modules
-* module : to manage modules
-* app : to manage applications
-* mysql : to manage mysql databases things
-* template : to manage templates used with app
+Internal design (execution flow, **dynamic tab completion**, script conventions): **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**.
 
-The most used module by user admin is app
+Install once (as root) from any bootstrap script under `scripts/` — they call `modules/module/wrappers/install`, which creates `/bin/tb` and bash completion. **Log out and open a new shell** so completion is active.
 
-There is **5 scripts** in the scripts directory to isntall 4 ways of web use :
-* nginx : pure nginx usage + php fpm + mariadb
-* apache : pure apache usage + php fpm + mariadb
-* hybrid : nginx proxying towards apache + php fpm + mariadb
-* proxy : nginx only use for proxying
-* noweb : space application only for CRON without WEB (no Apache and no NGINX)
+**turbinobash-web** ships four modules:
+
+| Module | Role |
+|--------|------|
+| `module` | Core: `tb` wrapper, completion, shared functions |
+| `app` | Applications: vhosts, PHP-FPM pools, SSL, backups (main module for admins) |
+| `mysql` | Thin CLI around MariaDB/MySQL admin (users, databases, grants, dumps) |
+| `template` | App templates (phpMyAdmin, Joomla, …) used with `tb app sudo/create` |
+
+### Hosting profiles (`scripts/`)
+
+Pick **one** bootstrap script — it installs the stack and sets defaults under `/conf/`:
+
+| Script | Stack |
+|--------|--------|
+| `nginx.sh` | Nginx + PHP-FPM + MariaDB |
+| `apache.sh` | Apache + PHP-FPM + MariaDB |
+| `hybrid.sh` | Nginx (front) → Apache + PHP-FPM + MariaDB |
+| `proxy.sh` | Nginx reverse proxy only |
+| `noweb.sh` | App spaces without a web server (cron, Node, etc.) |
 
 [![PMA INSTALL](https://img.youtube.com/vi/ZAB2zNwUv_k/1.jpg)](https://www.youtube.com/watch?v=ZAB2zNwUv_k)
-[![WORDPRESS INSTALL EXEMPLE](https://img.youtube.com/vi/CGkAHvZpaOk/1.jpg)](https://www.youtube.com/watch?v=CGkAHvZpaOk)
+[![WORDPRESS INSTALL EXAMPLE](https://img.youtube.com/vi/CGkAHvZpaOk/1.jpg)](https://www.youtube.com/watch?v=CGkAHvZpaOk)
 [![TB INSTALL](https://img.youtube.com/vi/JCZSkcO8b84/1.jpg)](https://www.youtube.com/watch?v=JCZSkcO8b84)
+
 ---
 
+## Install
 
-
-### Install
 ```bash
 cd /var/lib
-
 git clone https://github.com/xavdp-pro/turbinobash-web.git
-
 cd turbinobash-web/scripts
 ```
 
+Run **one** profile as root (`johndoe@domain.tld` = Let's Encrypt contact, `sub.mydomain.tld` = default app base domain):
+
 ```bash
-# johndoe@domain.tld is the email to use with letsencrypt
-# sub.mydomain.tld is the sub domain pluged with the container's IP
-
-# Theses is configuring the defaults for later uses :
-
-# NGINX
 bash nginx.sh johndoe@domain.tld sub.mydomain.tld
-
-# APACHE2
-bash apache.sh johndoe@domain.tld sub.mydomain.tld
-
-# NGINX proxying APACHE2
-bash hybrid.sh johndoe@domain.tld sub.mydomain.tld
-
-# Just NGINX proxying
-bash proxy.sh johndoe@domain.tld sub.mydomain.tld
-
-# Only system NOWEB for stand alone CRON for example
-bash noweb.sh
-
-# Once the script has finished, quit BASH and enter again in your SHELL : it enabling TURBINOBASH completion !!!
-
+# bash apache.sh johndoe@domain.tld sub.mydomain.tld
+# bash hybrid.sh johndoe@domain.tld sub.mydomain.tld
+# bash proxy.sh johndoe@domain.tld sub.mydomain.tld
+# bash noweb.sh
 ```
 
+After install, defaults are stored in:
 
+| File | Meaning |
+|------|---------|
+| `/conf/mode` | Active profile: `nginx`, `apache`, `hybrid`, `proxy`, or `noweb` |
+| `/conf/email` | Let's Encrypt registration email |
+| `/conf/webdomain` | Default FQDN suffix for new apps (`app-v1` → `app-v1.sub.mydomain.tld`) |
+| `/conf/php` | Default PHP version for new apps |
 
-### Set your DNS entries in the domain zone
+`tb app sudo/create` reads `/conf/mode` and delegates to `tb app sudo/way/<mode>/create`. Override with explicit `tb app sudo/way/nginx/create`, etc.
 
-- Create an A recod with the domain sub.mydomain.tld pointing on the contanier IP
-- Create an A recod with the wildxard domain *.sub.mydomain.tld pointing on the contanier IP
+### DNS (for HTTPS and wildcards)
 
+- `A` record: `sub.mydomain.tld` → server IP
+- `A` record: `*.sub.mydomain.tld` → server IP
 
 ![image](https://github.com/xavdp-pro/turbinobash-web/assets/38561912/0678f6d5-b19c-406f-a229-cf4078583749)
 
-### apt purge
+### Switching bootstrap scripts (`apt purge`)
 
-If you start lauch nginx.sh and after apache.sh, the nginx things are purged
+Re-running a different `scripts/*.sh` **replaces** the previous web stack:
 
-If you start lauch apache.sh and after nginx.sh, the apache things are purged
+- `nginx.sh` then `apache.sh` → nginx stack removed
+- `apache.sh` then `nginx.sh` → apache stack removed
+- `nginx.sh` or `apache.sh` then `proxy.sh` → apache and MariaDB removed
 
-If you start lauch apache.sh or nginx.sh and after proxy.sh, the apache and mariadb things are purged
+### Framework paths (per app `myapp-v1`)
 
-### Usage for NGINX, APACHE or PROXY
+| Path | Purpose |
+|------|---------|
+| `/apps/myapp-v1/` | App home (system user home directory) |
+| `/apps/myapp-v1/app/webroot/` | Document root |
+| `/apps/myapp-v1/etc/mysql/localhost/passwd` | DB password for this app |
+| `/etc/nginx/sites-enabled/10-myapp-v1.conf` | Nginx vhost (nginx/hybrid/proxy modes) |
+| `/etc/apache2/sites-enabled/10-myapp-v1.conf` | Apache vhost (apache/hybrid modes) |
+| `/etc/php/<ver>/fpm/pool.d/10-myapp-v1.conf` | PHP-FPM pool |
+| `/run/php/php-fpm-myapp-v1.sock` | FPM socket |
+
+Backups land under `/var/sav1/<hostname>/` (see backup section below).
+
+---
+
+## `tb app` — daily usage
+
 ```bash
-# You have to install the good script to use the default way like theses :
-
-# create test-v1.sub.mydomain.tld with SSL 
+# App URL: https://test-v1.<default webdomain from /conf/webdomain>
 tb app sudo/create test-v1 --certbot
 
-# create sub.myotherdomain.tld with SSL
 tb app sudo/create test-v1 --certbot --webdomain=sub.myotherdomain.tld
-
-# create sub.myotherdomain.tld and www.sub.myotherdomain.tld with SSL
 tb app sudo/create test-v1 --certbot --webdomain=sub.myotherdomain.tld --www
 
-# create a proxy towards a destination
-tb app sudo/create test-v1 https://127.0.0.1/ --certbot
+# Reverse proxy to a backend
+tb app sudo/create test-v1 https://127.0.0.1:3000/ --certbot
 
-# create a system application for CRON usage for example
-tb app sudo/create test-v1 --certbot --webdomain=sub.myotherdomain.tld --www
-
-# so, if you need an other way from the default one you can use
-tb app sudo/way/xxxx/create ...
-
+# Another hosting profile than /conf/mode
+tb app sudo/way/proxy/create myapp-v1 http://127.0.0.1:3000 --certbot
 ```
 
-### Turbinobash auto complete !!!
+### Shell completion
+
+Double-TAB on `tb app`, `tb app sudo/remove`, or `tb app sudo/create myapp --` lists commands, apps, and flags. All `tb` modules support completion.
+
+---
+
+## `tb mysql` — MariaDB/MySQL shortcut
+
+`tb mysql` is **not** a separate database engine. It wraps the same tasks you would run with `mysql` / `mariadb` CLI and root credentials (`/root/.my.cnf`), with completion and consistent naming.
+
+`tb app sudo/create` already calls it to create the matching DB user, database, and grants. Use `tb mysql` directly when you need manual DBA work:
 
 ```bash
-
-# just type and tab tab twice
-tb app ↹ ↹ 
-
-sudo/backup              sudo/info                sudo/install/mariadb     sudo/way/apache/create   sudo/way/noweb/remove
-sudo/bulldozer           sudo/install/base        sudo/install/php         sudo/way/apache/remove   sudo/way/proxy/create
-sudo/change/php          sudo/install/composer    sudo/install/ssl         sudo/way/hybrid/create   sudo/way/proxy/remove
-sudo/copy                sudo/install/ct-proxmox  sudo/install/web         sudo/way/hybrid/remove   test
-sudo/create              sudo/install/files       sudo/install/wp-cli      sudo/way/init            
-sudo/diskalert           sudo/install/mail        sudo/remove              sudo/way/noweb/create  
-
-# just type and tab tab twice
-tb app sudo/remove 
-
-coopnum-v1  pma-v1      pma-v2      qrcode-v2   toto-v1     zest-v1
-
-
-# just type and tab tab twice
-tb app sudo/create test-v1 --
-
---certbot          --remove           --template=joomla  --template=pma     --webdomain=       --www 
-
-
-### ALL COMANDS HAVE AUTO COMPLETE !!! ###
-
+tb mysql sudo/user/list
+tb mysql sudo/db/list
+tb mysql sudo/db/dump myapp-v1
+tb mysql sudo/grant myapp-v1 all myapp-v1
+tb mysql query "SHOW DATABASES"
 ```
 
-# Structure of an app
+Discover commands: `tb mysql` then TAB TAB.
 
-## Directory scructure
-Alls apps are in /apps
+---
+
+## App structure
+
+All apps live under `/apps`:
 
 ```console
 root@test0:/apps/test-v1# tree
@@ -164,12 +166,13 @@ root@test0:/apps/test-v1# tree
 
 11 directories, 4 files
 ```
-## test-v1 every where
+## One name everywhere
 
-- The app name is **test-v1**
-- The sytem user is **test-v1**
-- The db name is **test-v1**
-- The db user is **test-v1**
+For app **test-v1**:
+
+- Linux user: **test-v1**
+- MariaDB database: **test-v1**
+- MariaDB user: **test-v1**
 
 
 ```php
@@ -201,7 +204,7 @@ wp search-replace 'test-v1.sub.domain.tld' 'test-v2.sub.domain.tld'
 ```
 https://developer.wordpress.org/cli/commands/search-replace/
 
-Pif paf hopla and the test-v2 is ready !!
+The test-v2 copy is ready.
 
 #### Apply the good rights to the files and directory
 
@@ -340,27 +343,24 @@ nginx version
 30 4,20 * * * /usr/bin/certbot --nginx renew --quiet;/usr/sbin/service nginx restart
 ```
 
-#### Crontab diskalert 
+#### Crontab diskalert
 
-Send a email if a partition is more filled tha 85%
+Email when a filesystem exceeds a threshold (default **85%**, override with `--threshold=`):
 
 ```bash
 # m h  dom mon dow   command
 */5 * * * * /bin/tb app sudo/diskalert name@domain.tld
+# 30 3 * * * /bin/tb app sudo/diskalert name@domain.tld --threshold=90
 ```
 
-#### TODO
-Explain how templates are working
+#### Templates
 
 ```bash
 tb app sudo/create pma-v1 --certbot --template=pma
+tb app sudo/create site-v1 --certbot --template=joomla
 ```
 
-Add a an install mode to use à container which remote a proxy one to 
-
-Backup crontab
-
-## Wordpress installation exemple 
+## WordPress installation example
 
 #### App test-v1 Wordpress installation
 
@@ -447,7 +447,7 @@ Goto your test-v2 app url https://test-v2.sub.domain.tld/ and the copy is workin
 ```bash
 # NGINX one can be used with
 tb app sudo/create app-v1
-tb app sudo/remoe  app-v1
+tb app sudo/remove app-v1
 
 # because the
 tb app sudo/way/init nginx $email $hostname $php_default_version
@@ -459,11 +459,11 @@ tb app sudo/way/  ↹ ↹ (TAB TAB)
 sudo/way/apache/remove  sudo/way/hybrid/remove  sudo/way/nginx/create   sudo/way/noweb/create   sudo/way/proxy/create
 # show the all way possible and you can mix them when possible
 
-# If you insall th NGINX one, you can use the PROXY WAY or the NOWEB way 
+# If you installed the NGINX profile, you can use the PROXY or NOWEB way 
 tb app sudo/way/proxy/create app-v1
 tb app sudo/way/noweb/create app-v1
 
-# if YOU installed the HYNRID one, you can use the PROXY WAY, the NGINX way, or the NOWEB way if you need
+# If you installed HYBRID, you can also use PROXY, NGINX, or NOWEB ways when needed
 tb app sudo/way/nginx/create app-v1
 tb app sudo/way/proxy/create app-v1
 tb app sudo/way/noweb/create app-v1
