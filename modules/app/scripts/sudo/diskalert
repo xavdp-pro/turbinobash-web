@@ -6,6 +6,7 @@
 # Alertes à 90% tous les jours à 3h30
 # 30 3 * * * /bin/tb app sudo/diskalert email@domain.tld --threshold=90
 
+
 if whereis mailx | grep bin >/dev/null; then
   :
 else

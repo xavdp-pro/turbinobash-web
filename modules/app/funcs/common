@@ -8,5 +8,42 @@ function app_list
 	return 0
 }
 
+# Stop FPM pools and processes holding /apps/<app> before userdel / rm -rf
+function app_teardown_fpm_and_processes
+{
+	local app=$1
+	local d_app=$d_apps/$app
+	local f php_ver v
+
+	for f in $(find /etc/php/ -name "10-${app}.conf" 2>/dev/null); do
+		php_ver=$(echo "$f" | sed 's%/fpm.*%%' | sed 's%.*/php/%%')
+		rm -f "$f"
+		if [ -n "$php_ver" ]; then
+			service php${php_ver}-fpm reload 2>/dev/null \
+				|| service php${php_ver}-fpm restart 2>/dev/null \
+				|| true
+		fi
+	done
+
+	for v in $(find /etc/systemd/system -name "php[0-9].*-fpm.service" 2>/dev/null \
+		| sed 's%.*/php%%; s%-fpm.service%%'); do
+		service php${v}-fpm reload 2>/dev/null || true
+	done
+
+	if getent passwd "$app" &>/dev/null; then
+		pkill -u "$app" -TERM 2>/dev/null || true
+		sleep 1
+		pkill -u "$app" -KILL 2>/dev/null || true
+	fi
+
+	if command -v fuser >/dev/null 2>&1 && [ -d "$d_app" ]; then
+		fuser -k -TERM "$d_app" 2>/dev/null || true
+		sleep 1
+		fuser -k -KILL "$d_app" 2>/dev/null || true
+	fi
+
+	return 0
+}
+
 
 return 0

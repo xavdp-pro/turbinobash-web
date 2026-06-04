@@ -13,6 +13,8 @@ tb mysql sudo/grant revoke $app --force
 tb mysql sudo/user/remove $app --force
 tb mysql sudo/db/remove	$app --force
 
+app_teardown_fpm_and_processes $app
+
 if getent passwd $app &> /dev/null
 then
 	userdel $app -r

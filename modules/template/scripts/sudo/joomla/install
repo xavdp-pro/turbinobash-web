@@ -30,5 +30,5 @@ d_config=$TB_MODULE_DIR/templates/joomla
 
 cp -v $d_config/configuration.php $d_app/app/webroot
 
-cat $d_config/joom.sql | $MYSQL_CMD $app
+cat $d_config/joom.sql | $MYSQL_CMD $app 2>/dev/null
 

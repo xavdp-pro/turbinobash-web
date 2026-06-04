@@ -18,21 +18,7 @@ f_nginx=/etc/nginx/sites-enabled/10-$app.conf
 
 rm -rf $f_nginx
 
-
-
-for php in 7.3 7.4 8.0 8.1
-do
-
-	if [ -e  /etc/systemd/system/multi-user.target.wants/php${php}-fpm.service ];
-	then
-		rm -f /etc/php/${php}/fpm/pool.d/10-${app}.conf
-		
-		service php${php}-fpm restart || true
-	fi
-done
-
-
-
+app_teardown_fpm_and_processes $app
 
 service nginx reload || true
 

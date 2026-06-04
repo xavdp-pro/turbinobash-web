@@ -31,6 +31,6 @@ tb app sudo/bulldozer $dst
 
 echo "### tb mysql sudo/db/dump --triggers  --routines  $src | sed \"s% $src% $dst%g\" | $MYSQL_CMD --init-command=\"SET SESSION FOREIGN_KEY_CHECKS=0\" $dst ###"
 
-tb mysql sudo/db/dump --triggers --routines $src | sed "s%$src%$dst%g" | $MYSQL_CMD --init-command="SET SESSION FOREIGN_KEY_CHECKS=0" $dst
+tb mysql sudo/db/dump --triggers --routines $src | sed "s%$src%$dst%g" | $MYSQL_CMD --init-command="SET SESSION FOREIGN_KEY_CHECKS=0" $dst 2>/dev/null
 
 return 0
