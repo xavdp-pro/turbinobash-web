@@ -1,18 +1,40 @@
 # turbinobash-web
 
-**turbinobash-web** is a small command-line, Plesk-like hosting framework for Debian/Ubuntu.
+## At a glance
 
-It is not a container platform: it sits between raw server administration and per-application space management. Network policy (firewall, `iptables`, `ufw`, routing, etc.) is out of scope — use your usual sysadmin tooling.
+**turbinobash-web** is a **Plesk-like hosting stack in Bash** for Debian/Ubuntu: many isolated web apps on one server, managed from the shell with tab completion — not Docker, not a control panel in the browser.
 
-Compatible with **Debian 12+** (including Trixie) and **Ubuntu 24.04+**.
+| You get | You manage yourself |
+|--------|---------------------|
+| Per-app Linux user, webroot, MariaDB DB, vhost, PHP-FPM pool, optional SSL | Firewall, `iptables`, `ufw`, routing, hardware, OS hardening |
+
+**One command shape for everything:**
+
+```text
+tb <module> <script-path> [arguments…] [--options]
+```
+
+Example: `tb app sudo/create mysite-v1 --certbot` creates app **mysite-v1**, user **mysite-v1**, database **mysite-v1**, nginx/apache vhost, and can request a Let’s Encrypt certificate.
+
+**One name everywhere:** app `test-v1` → system user `test-v1` → MariaDB user and database `test-v1` → files under `/apps/test-v1/`.
+
+**Typical first run (as root):**
+
+1. Clone to `/var/lib/turbinobash-web`, run **one** bootstrap under `scripts/` (e.g. `bash nginx.sh you@domain.tld apps.domain.tld`).
+2. Open a **new shell** so `/bin/tb` completion works.
+3. Create apps with `tb app sudo/create …` — see sections below for WordPress, proxy, backups.
+
+**Where to read next:** stay on this page for install and daily ops. For how `tb` runs scripts, resolves paths, and completes arguments (`#C#` lines), see **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**.
+
+Compatible with **Debian 12+** (including Trixie) and **Ubuntu 24.04+**. First versions of the framework date from **2009**; this repository is the current **turbinobash-web** tree.
+
+---
 
 ## turbinobash framework
 
-**turbinobash** (`tb`) is a Bash framework: modular scripts, `sudo/` helpers, and shell completion.
+**turbinobash** (`tb`) is the core: modular Bash scripts under `modules/`, `sudo/` helpers (auto-elevate to root), and **dynamic tab completion** on modules, script paths, app names, and flags.
 
-Internal design (execution flow, **dynamic tab completion**, script conventions): **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**.
-
-Install once (as root) from any bootstrap script under `scripts/` — they call `modules/module/wrappers/install`, which creates `/bin/tb` and bash completion. **Log out and open a new shell** so completion is active.
+Install once from any `scripts/*.sh` bootstrap — it calls `modules/module/wrappers/install` and creates `/bin/tb` plus bash completion.
 
 **turbinobash-web** ships four modules:
 

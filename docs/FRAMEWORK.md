@@ -1,8 +1,21 @@
 # turbinobash — internal framework
 
-This document describes how the **turbinobash** (`tb`) framework works inside the repository. It is aimed at developers and advanced admins who extend modules or write new scripts.
+This document explains **how `tb` works inside the repo**. Day-to-day hosting commands are in [README.md](../README.md).
 
-User-facing usage stays in [README.md](../README.md).
+## At a glance
+
+**turbinobash** is not “a script collection”: it is a **small runtime** with two entry points:
+
+| Entry | Role |
+|-------|------|
+| `tb_execution` | Run `tb <module> <path> …` — parse options, find script file, load module functions, **source** the script |
+| `tb_completion` | Same routing on TAB — read `#C#` / `#C--#` comment lines in the target script and suggest words |
+
+Commands are **files** under `modules/<module>/scripts/…` (often `scripts/sudo/…`). Paths containing `sudo/` re-run as root if needed. The same file is used for execution and completion.
+
+**Why it feels different from argc/Bashly:** no code generation step; completion is driven by **comments in each script** (e.g. `#C# $(app_list)`), evaluated when you press TAB. Optional **domain overlays** (`modules/app.example.com/scripts/…`) and **profils/** hooks layer config without forking the whole tree.
+
+Read **§2** for the call chain, **§4** for completion (`cindex`, `#C#`), **§5** for conventions when adding scripts.
 
 ---
 
