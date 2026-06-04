@@ -4,7 +4,7 @@
 
 The purpose isn't a DOCKER like : Its a tool between raw server administration and automated appilcation space management
 
-Comptatible with Debian 12 and older + Ubuntu 24.04 and older
+Compatible with Debian 12+ (including Trixie) and Ubuntu 24.04+
 
 ## turbinobash 
 
@@ -36,27 +36,10 @@ There is **5 scripts** in the scripts directory to isntall 4 ways of web use :
 ```bash
 cd /var/lib
 
-git clone https://github.com/xavierdp/turbinobash-web.git
+git clone https://github.com/xavdp-pro/turbinobash-web.git
 
 cd turbinobash-web/scripts
 ```
-
-On a **Proxmox VE / PBS** host without an enterprise subscription, if `apt update` returns `401` on `enterprise.proxmox.com`, run as root **before** `nginx.sh` / `apache.sh` / … :
-
-```bash
-bash fix-proxmox-apt.sh
-apt update
-```
-
-The script comments out active `enterprise.proxmox.com` lines and adds `pve-no-subscription` and/or `pbs-no-subscription` on `download.proxmox.com` only when a matching enterprise repo was enabled (so a plain Debian CT is left unchanged).
-
-To **start the Proxmox VE web UI (port 8006)** when PVE is already installed (`pveproxy` present), run as root on the node:
-
-```bash
-bash pve-webui-8006.sh
-```
-
-If the script exits with “pveproxy is not installed”, this machine does not have Proxmox VE (e.g. PBS-only host uses **8007** only). Full PVE install: [Install Proxmox VE on Debian](https://pve.proxmox.com/wiki/Install_Proxmox_VE_on_Debian).
 
 ```bash
 # johndoe@domain.tld is the email to use with letsencrypt
@@ -91,7 +74,7 @@ bash noweb.sh
 - Create an A recod with the wildxard domain *.sub.mydomain.tld pointing on the contanier IP
 
 
-![image](https://github.com/xavierdp/turbinobash-web/assets/38561912/0678f6d5-b19c-406f-a229-cf4078583749)
+![image](https://github.com/xavdp-pro/turbinobash-web/assets/38561912/0678f6d5-b19c-406f-a229-cf4078583749)
 
 ### apt purge
 
@@ -271,6 +254,9 @@ No configuration needed - it just works on both old and new systems.
 
 
 #### Remove an app
+
+Before deleting files and the system user, `tb app sudo/remove` stops PHP-FPM pools for the app and terminates processes that hold `/apps/<app>` open.
+
 ```bash
 tb app sudo/remove test-v1
 ```
@@ -533,8 +519,8 @@ pm2 start main
 # ENJOY !!!
 ```
 
-![image](https://github.com/xavierdp/turbinobash-web/assets/38561912/567acf81-a492-4521-a085-74286ac01569)
-![image](https://github.com/xavierdp/turbinobash-web/assets/38561912/6cd6f740-db3a-4b95-8914-7503a02ace14)
+![image](https://github.com/xavdp-pro/turbinobash-web/assets/38561912/567acf81-a492-4521-a085-74286ac01569)
+![image](https://github.com/xavdp-pro/turbinobash-web/assets/38561912/6cd6f740-db3a-4b95-8914-7503a02ace14)
 
 
 
