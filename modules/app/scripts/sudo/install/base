@@ -3,8 +3,11 @@ export DEBIAN_FRONTEND=noninteractive
 
 tb_getopt timezone=Europe/Paris locale=en_US.UTF-8 - $@
 
-apt install -y curl wget ncdu iftop iotop tree unzip htop gnupg2 ca-certificates lsb-release debian-archive-keyring net-tools software-properties-common readline-common pv git 
+PACKAGES="curl wget ncdu iftop iotop tree unzip htop gnupg ca-certificates lsb-release debian-archive-keyring net-tools readline-common pv git"
+# software-properties-common: Ubuntu uniquement, absent sur Debian 13+
+apt-cache show software-properties-common >/dev/null 2>&1 && PACKAGES="$PACKAGES software-properties-common"
 
+apt install -y $PACKAGES
 
 timedatectl set-timezone $timezone
 
