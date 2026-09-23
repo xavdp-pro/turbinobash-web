@@ -61,38 +61,49 @@ if [ "$app" = All ]; then
 	[ -n "$root_files" ] && tar cjf $dir/root.tar.bz2 -C /root $root_files | true
 	echo
 
-	date
-	echo "############## ALL MYSQL ##############"
-	for i in $(tb mysql sudo/db/list); do
-		[ $i == performance_schema ] && continue
-		[ $i == information_schema ] && continue
+	# Le mode All ignorait $type et sauvegardait toujours tout, alors que le
+	# mode manuel le respecte et que l'aide annonce « All db app ». Une machine
+	# dont les applications pesent plus que le disque ne pouvait donc pas
+	# planifier la seule sauvegarde des bases.
+	if [[ "$type" = "All" || "$type" = "db" ]]; then
+		date
+		echo "############## ALL MYSQL ##############"
+		for i in $(tb mysql sudo/db/list); do
+			[ $i == performance_schema ] && continue
+			[ $i == information_schema ] && continue
 
-		dir=$d_sav1/auto/$date/$i
-		echo "############## $dir"
-		mkdir -p $dir
+			dir=$d_sav1/auto/$date/$i
+			echo "############## $dir"
+			mkdir -p $dir
 
-		tb mysql sudo/db/dump --triggers --routines $i | bzip2 >$dir/$i.sql.bz2
-		db_dump_check $dir/$i.sql.bz2 $i
-	done
-	echo
+			tb mysql sudo/db/dump --triggers --routines $i | bzip2 >$dir/$i.sql.bz2
+			db_dump_check $dir/$i.sql.bz2 $i
+		done
+		echo
+	fi
 
-	date
-	echo "############## ALL APPs ##############"
-	for app in $(app_list); do
-		dir=$d_sav1/auto/$date/$app
+	if [[ "$type" = "All" || "$type" = "app" ]]; then
+		date
+		echo "############## ALL APPs ##############"
+		for app in $(app_list); do
+			dir=$d_sav1/auto/$date/$app
 
-		echo "############## $dir"
+			echo "############## $dir"
 
-		mkdir -p $dir
-		tar cjf $dir/$app.tar.bz2 $nosav -C /apps/$app .
+			mkdir -p $dir
+			tar cjf $dir/$app.tar.bz2 $nosav -C /apps/$app .
 
-		[ -e /var/spool/cron/crontabs/$app ] && cp -vf /var/spool/cron/crontabs/$app $dir/crontab
+			[ -e /var/spool/cron/crontabs/$app ] && cp -vf /var/spool/cron/crontabs/$app $dir/crontab
 
-	done
+		done
+		echo
+	fi
 
 	date
 	for i in $(app_list) $(tb mysql sudo/db/list); do
-		du -sh $d_sav1/auto/$date/$i
+		if [ -d $d_sav1/auto/$date/$i ]; then
+			du -sh $d_sav1/auto/$date/$i
+		fi
 	done
 	date
 	echo
