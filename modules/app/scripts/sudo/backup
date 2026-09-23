@@ -16,6 +16,23 @@ backs_sytem=7
 # Convention: le dossier nosav est toujours exclu des backups
 nosav="--exclude=./nosav"
 
+# Une base non sauvegardee produit un .sql.bz2 qui se decompresse en zero
+# octet. Le wrapper tb rendant toujours 0, c'est le fichier qu'il faut
+# verifier : sans ce controle, une sauvegarde vide s'annonce « Done ».
+function db_dump_check
+{
+	local f=$1 name=$2
+
+	if [ "$(bzcat "$f" 2>/dev/null | head -c 100 | wc -c)" -eq 0 ]; then
+		echoc -r1 "############## ECHEC $name DB — dump vide, sauvegarde inutilisable !" >&2
+	fi
+
+	# Toujours 0 : le wrapper tb tourne en « set -e », un retour non nul
+	# interromprait la sauvegarde des applications suivantes. Le message est
+	# le signal, puisque tb sort de toute facon avec 0.
+	return 0
+}
+
 if [ "$app" = All ]; then
 	for i in $(find $d_sav1/auto -maxdepth 1 -mindepth 1 -type d | sort | tac | sed $backs_auto',$!d'); do
 		rm -rf $i
@@ -55,6 +72,7 @@ if [ "$app" = All ]; then
 		mkdir -p $dir
 
 		tb mysql sudo/db/dump --triggers --routines $i | bzip2 >$dir/$i.sql.bz2
+		db_dump_check $dir/$i.sql.bz2 $i
 	done
 	echo
 
@@ -91,6 +109,7 @@ else
 	if [[ "$type" = "All" || "$type" = "db" ]]; then
 		echo "############## MANUAL $app DB $dir/$app.sql.bz2"
 		tb mysql sudo/db/dump --triggers --routines $app | bzip2 >$dir/$app.sql.bz2
+		db_dump_check $dir/$app.sql.bz2 $app
 	fi
 
 	echo

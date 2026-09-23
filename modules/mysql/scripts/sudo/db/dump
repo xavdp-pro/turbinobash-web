@@ -41,6 +41,21 @@ elif [ -e ~/etc/mysql/localhost/passwd ]; then
   echo ""
   echo "SET FOREIGN_KEY_CHECKS=1;"
   echo "SET UNIQUE_CHECKS=1;"
+elif $MYSQLDUMP_CMD -u$(id -u -n) --skip-lock-tables --no-data --no-create-info $@ >/dev/null 2>&1; then
+  # Ni ~/.my.cnf ni le fichier de mot de passe, mais le socket unix suffit :
+  # c'est le cas de root sur une installation MariaDB par defaut.
+  echo "SET FOREIGN_KEY_CHECKS=0;"
+  echo "SET UNIQUE_CHECKS=0;"
+  echo ""
+  mysqldump_exec $MYSQLDUMP_CMD -u$(id -u -n) --skip-lock-tables $@ | sed -e '/^\/\*!/d' -e '/^--/d' -e 's%EXISTS `%EXISTS `'$prefix'%g' -e 's%TABLE `%TABLE `'$prefix'%g'
+  echo ""
+  echo "SET FOREIGN_KEY_CHECKS=1;"
+  echo "SET UNIQUE_CHECKS=1;"
+else
+  # Sans ce garde-fou le script ecrivait un fichier vide et rendait 0 : la
+  # sauvegarde etait annoncee reussie alors qu'elle ne contenait rien.
+  echoc -r1 "db/dump: aucun identifiant utilisable pour $(id -u -n) (~/.my.cnf, ~/etc/mysql/localhost/passwd ou socket) — dump impossible !" >&2
+  return 1
 fi
 
 return 0

@@ -28,7 +28,7 @@ function mysql_exec() {
 }
 
 function mysql_query {
-	local db_user db_passwd file d_home db_host_to db_port the_port
+	local db_user db_passwd file d_home db_host_to db_port the_port the_auth f_cnf f_passwd
 
 	# 	[ -z "$SQL" ] && return 0
 
@@ -52,15 +52,27 @@ function mysql_query {
 	[ -n "$db_port" ] && the_port="-P $db_port"
 
 	f_cnf=$d_home/.my.cnf
+	f_passwd=$d_home/etc/mysql/localhost/passwd
 
+	# Identifiants, dans l'ordre : ~/.my.cnf, le fichier de mot de passe de
+	# l'application, puis le socket unix — c'est ainsi que root s'authentifie
+	# sur une installation MariaDB par defaut. Sans ce dernier recours, une
+	# machine sans ~/.my.cnf ne pouvait plus interroger la base du tout.
 	if [ -e $f_cnf ]; then
-		if [ -n "$SQL" ]; then
-			echo "$SQL" | mysql_exec $MYSQL_CMD -B -u$db_user -h$db_host_to -s $the_port $@
-		else
-			mysql_exec $MYSQL_CMD -B -u$db_user -h$db_host_to -s $the_port $@ <&0
-		fi
+		the_auth=""
+	elif [ -e $f_passwd ]; then
+		the_auth="-p$(cat $f_passwd)"
+	elif $MYSQL_CMD -B -u$db_user -h$db_host_to -s $the_port -e 'SELECT 1' >/dev/null 2>&1; then
+		the_auth=""
 	else
-		echoc -y1 "$f_passwd unexistant !"
+		echoc -r1 "mysql_query: ni $f_cnf ni $f_passwd, et la connexion par socket a échoué pour $db_user !" >&2
+		return 1
+	fi
+
+	if [ -n "$SQL" ]; then
+		echo "$SQL" | mysql_exec $MYSQL_CMD -B -u$db_user -h$db_host_to -s $the_port $the_auth $@
+	else
+		mysql_exec $MYSQL_CMD -B -u$db_user -h$db_host_to -s $the_port $the_auth $@ <&0
 	fi
 
 	return 0
