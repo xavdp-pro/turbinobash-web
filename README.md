@@ -562,3 +562,7 @@ pm2 start main
 
 
 
+
+## Dedication
+
+[Personal dedication by Xavier de Poorter](DEDICATION.md).
