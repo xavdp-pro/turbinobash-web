@@ -165,15 +165,15 @@ Discover commands: `tb mysql` then TAB TAB.
 
 ## App structure
 
-All apps live under `/apps`:
+All apps live under `/apps/<app>/`. **Only `/apps/<app>/app/` is a Git repository (`/apps/<app>/app/.git`)** — never `/apps/<app>/` itself. Because `etc/` (credentials), `sav/` (persistent non-Git data/uploads), `nosav/` (excluded caches/media), `log/`, and `tmp/` live one level above `app/`, they are physically outside the Git working tree and can never be accidentally committed to Git:
 
 ```console
 root@test0:/apps/test-v1# tree
 .
-|-- app
+|-- app                      # <-- Git repository root (/apps/test-v1/app/.git)
 |   `-- webroot
 |       `-- index.php
-|-- etc
+|-- etc                      # <-- Outside Git: credentials & service secrets
 |   |-- mysql
 |   |   `-- localhost
 |   |       `-- passwd
@@ -181,12 +181,11 @@ root@test0:/apps/test-v1# tree
 |   |   `-- version
 |   `-- ssh
 |       `-- passwd
-|-- log
-|-- sav
+|-- log                      # <-- Outside Git: application logs
+|-- nosav                    # <-- Outside Git & excluded from tb backup
+|-- sav                      # <-- Outside Git & included in tb backup
 `-- tmp
     `-- sessions
-
-11 directories, 4 files
 ```
 ## One name everywhere
 
